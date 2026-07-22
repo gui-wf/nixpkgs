@@ -4061,7 +4061,14 @@ with pkgs;
   wrapRustcWith = { rustc-unwrapped, ... }@args: callPackage ../build-support/rust/rustc-wrapper args;
   wrapRustc = rustc-unwrapped: wrapRustcWith { inherit rustc-unwrapped; };
 
-  rust_1_97 = callPackage ../development/compilers/rust/1_97.nix { };
+  # Build against LLVM 22 to match the LLVM upstream Rust 1.97 is built and
+  # tested with. The default llvmPackages (21) is a version behind, and Rust's
+  # codegen emits X86 partial-reduction intrinsics (e.g. vpdpwssd.512) that
+  # LLVM 21 fails to instruction-select on baseline x86-64 ("Cannot select")
+  # while LLVM 22 lowers correctly. See the PR description.
+  rust_1_97 = callPackage ../development/compilers/rust/1_97.nix {
+    llvmPackages = llvmPackages_22;
+  };
   rust = rust_1_97;
 
   mrustc = callPackage ../development/compilers/mrustc { };
